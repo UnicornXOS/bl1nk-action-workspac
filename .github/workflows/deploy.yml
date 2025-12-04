@@ -1,33 +1,14 @@
-name: Deploy
+name: Deploy to Firebase on main branch push
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v2
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v2
-        with:
-          node-version: '16'
-
-      - name: Install dependencies
-        run: npm install
-
-      - name: Run tests
-        run: npm run test
-
-      - name: Deploy to Vercel
-        env:
-          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
-        run: npm run deploy
-
-      - name: Deploy Apps Script
-        env:
-          CLASP_TOKEN: ${{ secrets.CLASP_TOKEN }}
-        run: npm run deploy:appsscript
+      - uses: actions/checkout@v4
+      - run: npm install -g firebase-tools
+      - run: cd firebase && firebase deploy --token ${{ secrets.FIREBASE_TOKEN }}
