@@ -1,0 +1,32 @@
+{
+  "name": "workspace-automation",
+  "version": "1.0.0",
+  "description": "Google Workspace Automation System",
+  "private": true,
+  "scripts": {
+    "dev": "cd backend && npm run dev",
+    "build": "npm run build:backend && npm run build:frontend",
+    "build:backend": "cd backend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
+    "deploy": "npm run build && npm run deploy:backend && npm run deploy:appsscript",
+    "deploy:backend": "cd backend && npm run deploy",
+    "deploy:frontend": "cd frontend && npm run deploy",
+    "deploy:appsscript": "cd apps-script && npm run deploy",
+    "test": "npm run test:backend && npm run test:frontend && npm run test:appsscript",
+    "test:backend": "cd backend && npm run test",
+    "test:frontend": "cd frontend && npm run test",
+    "test:appsscript": "cd apps-script && npm run test",
+    "lint": "npm run lint:backend && npm run lint:frontend",
+    "lint:backend": "cd backend && npm run lint",
+    "lint:frontend": "cd frontend && npm run lint",
+    "setup": "bash scripts/setup.sh",
+    "setup:firebase": "cd firebase && npm run setup",
+    "setup:appsscript": "cd apps-script && npm run setup"
+  },
+  "workspaces": [
+    "backend",
+    "frontend",
+    "apps-script",
+    "firebase"
+  ]
+}
