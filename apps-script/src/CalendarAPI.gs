@@ -1,50 +1,80 @@
-/**
- * @fileoverview Interacts with the Google Calendar API.
- *
- * This script provides functions for creating, updating, and managing events
- * in Google Calendar.
- */
+// ===== GOOGLE CALENDAR API =====
 
-/**
- * An object to interact with the Google Calendar API.
- * @namespace
- */
-const CalendarAPI = {
-  /**
-   * Creates a new event in the user's primary calendar.
-   *
-   * @param {string} title The title of the event.
-   * @param {Date} startTime The start time of the event.
-   * @param {Date} endTime The end time of the event.
-   * @param {Object} options Additional options for the event (e.g., guests, description).
-   * @returns {Object} The newly created calendar event.
-   */
-  createEvent: function(title, startTime, endTime, options) {
-    try {
-      const event = CalendarApp.getDefaultCalendar().createEvent(title, startTime, endTime, options);
-      console.log(`Event '${title}' created successfully.`);
-      return event;
-    } catch (error) {
-      console.error(`Failed to create event '${title}': ${error.message}`);
-      return null;
-    }
-  },
+function createCalendarEvent(title, startTime, endTime, description) {
+  const calendar = CalendarApp.getDefaultCalendar();
+  
+  const event = calendar.createEvent(title, startTime, endTime, {
+    description: description,
+    location: 'ออนไลน์'
+  });
+  
+  logInfo('สร้างกิจกรรม: ' + event.getId());
+  return event.getId();
+}
 
-  /**
-   * Retrieves events from the primary calendar within a specified time range.
-   *
-   * @param {Date} startTime The start of the time range.
-   * @param {Date} endTime The end of the time range.
-   * @returns {Array<Object>} An array of calendar events.
-   */
-  getEvents: function(startTime, endTime) {
-    try {
-      const events = CalendarApp.getDefaultCalendar().getEvents(startTime, endTime);
-      console.log(`Retrieved ${events.length} events.`);
-      return events;
-    } catch (error) {
-      console.error("Failed to retrieve events: " + error.message);
-      return [];
-    }
+function getEventsInRange(startDate, endDate) {
+  const calendar = CalendarApp.getDefaultCalendar();
+  
+  const events = calendar.getEvents(startDate, endDate);
+  
+  Logger.log(`📅 กิจกรรมจาก ${startDate} ถึง ${endDate}:`);
+  
+  events.forEach(event => {
+    Logger.log(`  ⏰ ${event.getTitle()}`);
+    Logger.log(`     เวลา: ${event.getStartTime()} - ${event.getEndTime()}`);
+    Logger.log(`     สถานที่: ${event.getLocation()}`);
+  });
+  
+  return events;
+}
+
+function updateCalendarEvent(eventId, newTitle, newDescription) {
+  const calendar = CalendarApp.getDefaultCalendar();
+  
+  const events = calendar.getEvents(
+    new Date(2025, 0, 1),
+    new Date(2026, 0, 1)
+  );
+  
+  const event = events.find(e => e.getId() === eventId);
+  
+  if (event) {
+    event.setTitle(newTitle);
+    event.setDescription(newDescription);
+    logInfo('อัปเดตกิจกรรม: ' + eventId);
+  } else {
+    logError('ไม่พบกิจกรรม');
   }
-};
+}
+
+function deleteCalendarEvent(eventId) {
+  const calendar = CalendarApp.getDefaultCalendar();
+  
+  const events = calendar.getEvents(
+    new Date(2025, 0, 1),
+    new Date(2026, 0, 1)
+  );
+  
+  const event = events.find(e => e.getId() === eventId);
+  
+  if (event) {
+    event.deleteEvent();
+    logInfo('ลบกิจกรรม: ' + eventId);
+  }
+}
+
+function addGuestToEvent(eventId, guestEmail) {
+  const calendar = CalendarApp.getDefaultCalendar();
+  
+  const events = calendar.getEvents(
+    new Date(2025, 0, 1),
+    new Date(2026, 0, 1)
+  );
+  
+  const event = events.find(e => e.getId() === eventId);
+  
+  if (event) {
+    event.addGuest(guestEmail);
+    logInfo('เพิ่มผู้เข้าร่วม: ' + guestEmail);
+  }
+}
