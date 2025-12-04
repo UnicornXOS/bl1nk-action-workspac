@@ -1,56 +1,157 @@
-/**
- * @fileoverview Handles incoming webhooks from Vercel.
- *
- * This script provides a function to process POST requests sent from a Vercel
- * server. It is the entry point for real-time communication from the backend.
- */
-
-/**
- * Handles HTTP POST requests sent to the Apps Script web app.
- *
- * This function is the primary endpoint for webhooks. It processes the incoming
- * data and triggers the appropriate workflow.
- *
- * @param {Object} e The event object, containing the request parameters.
- * @returns {ContentService.TextOutput} A JSON response indicating the result.
- */
+// ===== WEBHOOK HANDLER =====
 function doPost(e) {
   try {
-    // Check if the request has a valid payload.
-    if (!e || !e.postData || !e.postData.contents) {
-      throw new Error("Invalid POST data received.");
+    const data = JSON.parse(e.postData.contents);
+    const action = data.action;
+    
+    logInfo('Webhook received:', { action });
+    
+    switch(action) {
+      case 'create_workflow':
+        return handleCreateWorkflow(data);
+      
+      case 'update_workflow':
+        return handleUpdateWorkflow(data);
+      
+      case 'delete_workflow':
+        return handleDeleteWorkflow(data);
+      
+      case 'execute_workflow':
+        return handleExecuteWorkflow(data);
+      
+      case 'setup_triggers':
+        return handleSetupTriggers(data);
+      
+      case 'test_connection':
+        return handleTestConnection();
+      
+      default:
+        return createResponse({ error: 'Unknown action' }, 400);
     }
-
-    // Parse the JSON payload from the request.
-    const postData = JSON.parse(e.postData.contents);
-
-    // In a real implementation, you would trigger a workflow based on the postData.
-    // For now, this is a placeholder.
-    console.log("Received webhook data: " + JSON.stringify(postData));
-
-    // Create a success response.
-    const response = {
-      status: "success",
-      message: "Webhook processed successfully.",
-      data: postData,
-    };
-
-    // Return the response as a JSON object.
-    return ContentService.createTextOutput(JSON.stringify(response))
-      .setMimeType(ContentService.MimeType.JSON);
-
   } catch (error) {
-    // Log the error for debugging purposes.
-    console.error("Error processing webhook: " + error.message);
-
-    // Create an error response.
-    const errorResponse = {
-      status: "error",
-      message: "Failed to process webhook: " + error.message,
-    };
-
-    // Return the error response as a JSON object.
-    return ContentService.createTextOutput(JSON.stringify(errorResponse))
-      .setMimeType(ContentService.MimeType.JSON);
+    logError('Webhook error:', error);
+    return createResponse({ error: error.toString() }, 500);
   }
+}
+
+// ===== CREATE WORKFLOW =====
+function handleCreateWorkflow(data) {
+  try {
+    const { workflowId, workflow } = data;
+    
+    saveWorkflow(workflowId, workflow);
+    
+    logInfo('Workflow created:', { workflowId, type: workflow.type });
+    
+    return createResponse({
+      success: true,
+      message: 'Workflow created successfully',
+      workflowId: workflowId
+    });
+  } catch (error) {
+    logError('Error creating workflow:', error);
+    return createResponse({ error: error.toString() }, 500);
+  }
+}
+
+// ===== UPDATE WORKFLOW =====
+function handleUpdateWorkflow(data) {
+  try {
+    const { workflowId, workflow } = data;
+    
+    saveWorkflow(workflowId, workflow);
+    
+    logInfo('Workflow updated:', { workflowId });
+    
+    return createResponse({
+      success: true,
+      message: 'Workflow updated successfully'
+    });
+  } catch (error) {
+    logError('Error updating workflow:', error);
+    return createResponse({ error: error.toString() }, 500);
+  }
+}
+
+// ===== DELETE WORKFLOW =====
+function handleDeleteWorkflow(data) {
+  try {
+    const { workflowId } = data;
+    
+    deleteWorkflow(workflowId);
+    
+    logInfo('Workflow deleted:', { workflowId });
+    
+    return createResponse({
+      success: true,
+      message: 'Workflow deleted successfully'
+    });
+  } catch (error) {
+    logError('Error deleting workflow:', error);
+    return createResponse({ error: error.toString() }, 500);
+  }
+}
+
+// ===== EXECUTE WORKFLOW =====
+function handleExecuteWorkflow(data) {
+  try {
+    const { workflowId, triggerData } = data;
+    
+    const workflow = getWorkflow(workflowId);
+    
+    if (!workflow) {
+      return createResponse({ error: 'Workflow not found' }, 404);
+    }
+    
+    // Execute workflow (จะเรียก executeWorkflow จาก Workflows.gs)
+    executeWorkflow(workflowId, triggerData);
+    
+    logInfo('Workflow execution started:', { workflowId });
+    
+    return createResponse({
+      success: true,
+      message: 'Workflow execution started'
+    });
+  } catch (error) {
+    logError('Error executing workflow:', error);
+    return createResponse({ error: error.toString() }, 500);
+  }
+}
+
+// ===== SETUP TRIGGERS =====
+function handleSetupTriggers(data) {
+  try {
+    setupTriggers();
+    
+    logInfo('Triggers setup completed');
+    
+    return createResponse({
+      success: true,
+      message: 'Triggers setup completed'
+    });
+  } catch (error) {
+    logError('Error setting up triggers:', error);
+    return createResponse({ error: error.toString() }, 500);
+  }
+}
+
+// ===== TEST CONNECTION =====
+function handleTestConnection() {
+  try {
+    return createResponse({
+      success: true,
+      message: 'Connection successful',
+      timestamp: new Date().toISOString()
+    });
+  } catch (error) {
+    logError('Connection test failed:', error);
+    return createResponse({ error: error.toString() }, 500);
+  }
+}
+
+// ===== CREATE RESPONSE =====
+function createResponse(data, statusCode = 200) {
+  return ContentService
+    .createTextOutput(JSON.stringify(data))
+    .setMimeType(ContentService.MimeType.JSON);
 }
