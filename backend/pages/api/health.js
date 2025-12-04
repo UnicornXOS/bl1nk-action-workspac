@@ -1,5 +1,8 @@
-// Next.js API route support: https://nextjs.org/docs/api-routes/introduction
-
-export default function handler(req, res) {
-  res.status(200).json({ status: 'ok' });
+export default async function handler(req, res) {
+  return res.status(200).json({
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    uptime: process.uptime(),
+    environment: process.env.NODE_ENV
+  });
 }
