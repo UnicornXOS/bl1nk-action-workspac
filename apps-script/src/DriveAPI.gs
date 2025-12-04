@@ -1,49 +1,64 @@
-/**
- * @fileoverview Interacts with the Google Drive API.
- *
- * This script provides functions for managing files and folders in Google Drive.
- */
+// ===== GOOGLE DRIVE API =====
 
-/**
- * An object to interact with the Google Drive API.
- * @namespace
- */
-const DriveAPI = {
-  /**
-   * Creates a new folder in Google Drive.
-   *
-   * @param {string} folderName The name of the new folder.
-   * @returns {Object} The newly created folder object.
-   */
-  createFolder: function(folderName) {
-    try {
-      const folder = DriveApp.createFolder(folderName);
-      console.log(`Folder '${folderName}' created successfully.`);
-      return folder;
-    } catch (error) {
-      console.error(`Failed to create folder '${folderName}': ${error.message}`);
-      return null;
-    }
-  },
+function createFolder() {
+  const folderName = 'My New Folder ' + new Date().toLocaleDateString();
+  
+  const folder = Drive.Files.create({
+    title: folderName,
+    mimeType: 'application/vnd.google-apps.folder',
+    parents: [{id: 'root'}]
+  });
+  
+  logInfo('สร้างโฟลเดอร์: ' + folder.id);
+  return folder.id;
+}
 
-  /**
-   * Finds files in Google Drive by name.
-   *
-   * @param {string} fileName The name of the file to search for.
-   * @returns {Array<Object>} An array of file objects.
-   */
-  findFilesByName: function(fileName) {
-    try {
-      const files = DriveApp.getFilesByName(fileName);
-      const fileList = [];
-      while (files.hasNext()) {
-        fileList.push(files.next());
-      }
-      console.log(`Found ${fileList.length} files with the name '${fileName}'.`);
-      return fileList;
-    } catch (error) {
-      console.error(`Failed to find files by name '${fileName}': ${error.message}`);
-      return [];
-    }
+function searchFiles(query) {
+  const results = Drive.Files.list({
+    q: query,
+    spaces: 'drive',
+    pageSize: 10,
+    fields: 'files(id, name, mimeType, createdTime)'
+  });
+  
+  if (results.files && results.files.length > 0) {
+    results.files.forEach(file => {
+      Logger.log(`📄 ${file.name} (${file.id})`);
+    });
+  } else {
+    logError('ไม่พบไฟล์');
   }
-};
+  
+  return results.files;
+}
+
+function copyFile(fileId, newName) {
+  const copiedFile = Drive.Files.copy({
+    title: newName
+  }, fileId);
+  
+  logInfo('คัดลอกไฟล์: ' + copiedFile.id);
+  return copiedFile.id;
+}
+
+function moveFileToFolder(fileId, folderId) {
+  const file = Drive.Files.get(fileId, {
+    fields: 'parents'
+  });
+  
+  const previousParents = file.parents.map(p => p.id).join(',');
+  
+  Drive.Files.update({
+    parents: [{id: folderId}]
+  }, fileId, {
+    removeParents: previousParents,
+    addParents: folderId
+  });
+  
+  logInfo('ย้ายไฟล์ไปโฟลเดอร์: ' + folderId);
+}
+
+function deleteFile(fileId) {
+  Drive.Files.remove(fileId);
+  logInfo('ลบไฟล์: ' + fileId);
+}
